@@ -12,7 +12,7 @@ import org.jetbrains.kotlinx.lincheck.verifier.VerifierState
 import org.junit.*
 import java.io.File
 
-class TreiberStackTest {
+class TreiberStackWithEliminationTest {
     private val q = TreiberStackWithElimination<Int>()
 
     @Operation
