@@ -31,7 +31,7 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(kotlin("reflect"))
     testImplementation(kotlin("test-junit"))
-    testImplementation("org.jetbrains.kotlinx:lincheck:2.14.1")
+    testImplementation("org.jetbrains.kotlinx:lincheck:2.15")
     testImplementation("com.amazonaws:aws-java-sdk:1.12.314")
 }
 
