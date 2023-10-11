@@ -1,14 +1,11 @@
-import java.util.concurrent.*
-import java.util.concurrent.atomic.*
+import java.util.concurrent.ThreadLocalRandom
+import java.util.concurrent.atomic.AtomicReferenceArray
 
 /**
- * @author TODO: Last Name, First Name
+ * @author Belousov Timofey
  */
 open class TreiberStackWithElimination<E> : Stack<E> {
     private val stack = TreiberStack<E>()
-
-    // TODO: Try to optimize concurrent push and pop operations,
-    // TODO: synchronizing them in an `eliminationArray` cell.
     private val eliminationArray = AtomicReferenceArray<Any?>(ELIMINATION_ARRAY_SIZE)
 
     override fun push(element: E) {
@@ -17,24 +14,39 @@ open class TreiberStackWithElimination<E> : Stack<E> {
     }
 
     protected open fun tryPushElimination(element: E): Boolean {
-        TODO("Implement me!")
-        // TODO: Choose a random cell in `eliminationArray`
-        // TODO: and try to install the element there.
-        // TODO: Wait `ELIMINATION_WAIT_CYCLES` loop cycles
-        // TODO: in hope that a concurrent `pop()` grabs the
-        // TODO: element. If so, clean the cell and finish,
-        // TODO: returning `true`. Otherwise, move the cell
-        // TODO: to the empty state and return `false`.
+        val eliminationCellIndex = randomCellIndex()
+
+        if (eliminationArray.compareAndSet(eliminationCellIndex, CELL_STATE_EMPTY, element)) {
+            for (i in 0..<ELIMINATION_WAIT_CYCLES) {
+                if (eliminationArray.compareAndSet(eliminationCellIndex, CELL_STATE_RETRIEVED, CELL_STATE_EMPTY)) {
+                    return true
+                }
+            }
+            while (eliminationArray[eliminationCellIndex] == element) {
+                if (eliminationArray.compareAndSet(eliminationCellIndex, element, CELL_STATE_EMPTY)) {
+                    return false
+                }
+            }
+            if (eliminationArray[eliminationCellIndex] == CELL_STATE_RETRIEVED) {
+                eliminationArray.set(eliminationCellIndex, CELL_STATE_EMPTY)
+                return true
+            }
+        }
+        return false
     }
 
     override fun pop(): E? = tryPopElimination() ?: stack.pop()
 
     private fun tryPopElimination(): E? {
-        TODO("Implement me!")
-        // TODO: Choose a random cell in `eliminationArray`
-        // TODO: and try to retrieve an element from there.
-        // TODO: On success, return the element.
-        // TODO: Otherwise, if the cell is empty, return `null`.
+        val eliminationCellIndex = randomCellIndex()
+        val eliminationCellValue = eliminationArray[eliminationCellIndex]
+        if (eliminationCellValue != CELL_STATE_RETRIEVED && eliminationCellValue != CELL_STATE_EMPTY) {
+            if (eliminationArray.compareAndSet(eliminationCellIndex, eliminationCellValue, CELL_STATE_RETRIEVED)) {
+                @Suppress("UNCHECKED_CAST")
+                return eliminationCellValue as? E  // Unsafe cast to a generic type ㄟ( ▔, ▔ )ㄏ
+            }
+        }
+        return null
     }
 
     private fun randomCellIndex(): Int =
