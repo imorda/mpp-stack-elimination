@@ -1,6 +1,6 @@
 #idea files
-.idea/
 *.iml
+.idea/
 *.ipr
 *.iws
 atlassian-ide-plugin.xml
